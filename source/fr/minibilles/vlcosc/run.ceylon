@@ -13,6 +13,11 @@ import com.illposed.osc {
 	OSCMessage
 }
 
+import fr.minibilles.cli {
+	parseArguments,
+	help
+}
+
 import java.lang {
 	Thread
 }
@@ -27,7 +32,6 @@ import java.util {
 class Vlc(Socket socket) {
 	
 	variable Boolean paused = false;
-	
 	
 	void command(String command) {
 		socket.writeFully(utf8.encode(command + operatingSystem.newline));
@@ -48,24 +52,12 @@ class Vlc(Socket socket) {
 Vlc connectVlc(String host, Integer port) {
 	value connector = newSocketConnector(SocketAddress(host, port));
 	value socket = connector.connect();
+	print("Connected on VLC on ``host``:``port``");
 	return Vlc(socket);
 }
 
-
-"Run the module `fr.minibilles.vlcosc`."
-shared void run() {
-
-	value vlcAddress = "localhost";
-	value vlcPort = 9999;
-	value file = "/Volumes/diskE/Users/j5r/Documents/Personnel/musique/Space Oddity (2009) David Bowie/01 Space Oddity (Mono Single Edit) (2009 Digital Remaster).mp3";
-	//value file = "/Volumes/video/Films Vus/alfie.avi";
+void startOscServer(Integer port, Vlc vlc) {
 	
-	value vlc = connectVlc(vlcAddress, vlcPort);
-	vlc.add(file);
-	
-	print("Connected on VLC on ``vlcAddress``:``vlcPort``");
-
-	value port = OSCPortIn.defaultSCOSCPort();
 	value server = OSCPortIn(port, StandardCharsets.\iUTF_8);
 	value listener = object satisfies OSCListener {
 		shared actual void acceptMessage(Date date, OSCMessage message) {
@@ -75,9 +67,29 @@ shared void run() {
 	};
 	server.addListener("", listener);
 	server.startListening();	
-
+	
 	print("Listening OSC on ``port``.");
 
+}
+
+
+"Run the module `fr.minibilles.vlcosc`."
+shared void run() {
+
+	value [options, errors] = parseArguments<Options>(process.arguments);
+	if (nonempty errors) {
+		errors.each(print);
+		print(help<Options> ("VlcOsc"));
+		process.exit(1);
+	}
+	
+	value file = "/Volumes/diskE/Users/j5r/Documents/Personnel/musique/Space Oddity (2009) David Bowie/01 Space Oddity (Mono Single Edit) (2009 Digital Remaster).mp3";
+	
+	value vlc = connectVlc(options.host, options.port);
+	vlc.add(file);
+	
+	startOscServer(options.oscPort, vlc);
+	
 	while (true) {
 		Thread.sleep(50);
 	}

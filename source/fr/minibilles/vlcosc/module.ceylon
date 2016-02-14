@@ -3,4 +3,6 @@ native("jvm") module fr.minibilles.vlcosc "1.0.0" {
 	import "com.illposed.osc:javaosc-core" "0.3";
 	
 	import ceylon.io "1.2.1";
+	
+	import fr.minibilles.cli "0.1.0";
 }
